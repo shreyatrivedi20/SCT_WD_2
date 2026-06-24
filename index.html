@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chronos — Stopwatch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<canvas id="ambientCanvas" class="bg-canvas"></canvas>
+<canvas id="confettiCanvas" class="bg-canvas confetti-canvas"></canvas>
+
+<div class="app">
+
+  <header class="app-header">
+    <div class="brand">
+      <span class="brand-mark">⏱</span>
+      <span class="brand-name">CHRONOS</span>
+    </div>
+    <div class="header-controls">
+      <button id="voiceBtn" class="icon-btn" hidden aria-pressed="false" title="Voice commands (say start / pause / lap / reset)">🎙</button>
+      <button id="announceBtn" class="icon-btn" hidden aria-pressed="true" title="Spoken announcements">🗣</button>
+      <button id="muteBtn" class="icon-btn" aria-pressed="false" title="Mute sounds (M)">🔊</button>
+      <button id="themeBtn" class="icon-btn" title="Cycle theme (T)">◐</button>
+    </div>
+  </header>
+
+  <nav class="mode-tabs" role="tablist" aria-label="Timer mode">
+    <button class="mode-tab active" data-mode="stopwatch" role="tab">Stopwatch</button>
+    <button class="mode-tab" data-mode="pomodoro" role="tab">Pomodoro</button>
+    <button class="mode-tab" data-mode="workout" role="tab">Workout Interval</button>
+  </nav>
+
+  <main class="stage">
+    <div class="bezel-wrap">
+      <svg class="bezel" viewBox="0 0 260 260" aria-hidden="true">
+        <!-- tick marks -->
+        <g class="ticks"></g>
+        <circle class="ring-track" cx="130" cy="130" r="120" />
+        <circle id="progressRing" class="ring-progress" cx="130" cy="130" r="120" />
+      </svg>
+
+      <div class="readout">
+        <span id="stepLabel" class="step-label"></span>
+        <span id="timeDisplay" class="time-display">00:00.00</span>
+        <span id="modeLabel" class="mode-label">STOPWATCH</span>
+      </div>
+    </div>
+
+    <div class="controls">
+      <button id="resetBtn" class="ctrl-btn ctrl-secondary" title="Reset (R)">RESET</button>
+      <button id="startPauseBtn" class="ctrl-btn ctrl-primary" title="Start / Pause (Space)">START</button>
+      <button id="lapBtn" class="ctrl-btn ctrl-secondary" title="Lap (L)">LAP</button>
+    </div>
+  </main>
+
+  <section class="panels">
+
+    <div class="panel laps-panel">
+      <div class="panel-head">
+        <h2>Lap Times</h2>
+        <button id="exportBtn" class="text-btn">Export CSV ↓</button>
+      </div>
+      <div id="statsPanel" class="stats-row" hidden>
+        <div class="stat"><span class="stat-label">Fastest</span><span id="statFastest" class="stat-value stat-fast"></span></div>
+        <div class="stat"><span class="stat-label">Slowest</span><span id="statSlowest" class="stat-value stat-slow"></span></div>
+        <div class="stat"><span class="stat-label">Average</span><span id="statAvg" class="stat-value"></span></div>
+        <div class="stat"><span class="stat-label">Laps</span><span id="statCount" class="stat-value"></span></div>
+      </div>
+      <div class="laps-table-wrap">
+        <table class="laps-table">
+          <thead><tr><th>#</th><th>Lap</th><th>Total</th></tr></thead>
+          <tbody id="lapsBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="panel side-panel">
+      <button id="historyToggle" class="panel-toggle">Session History ▾</button>
+      <ul id="historyList" class="history-list" hidden></ul>
+
+      <button id="shortcutsToggle" class="panel-toggle">Keyboard Shortcuts ▾</button>
+      <ul id="shortcutsPanel" class="shortcuts-list" hidden>
+        <li><kbd>Space</kbd> Start / Pause</li>
+        <li><kbd>L</kbd> Lap</li>
+        <li><kbd>R</kbd> Reset</li>
+        <li><kbd>M</kbd> Mute</li>
+        <li><kbd>T</kbd> Theme</li>
+      </ul>
+    </div>
+
+  </section>
+
+  <footer class="app-footer">Precision timing, instrument-grade.</footer>
+</div>
+
+<script>
+  // Generate 60 bezel tick marks (like a real chronometer face)
+  (function () {
+    const g = document.querySelector('.ticks');
+    const cx = 130, cy = 130, rOuter = 120, rInnerMajor = 108, rInnerMinor = 113;
+    for (let i = 0; i < 60; i++) {
+      const angle = (i / 60) * 2 * Math.PI;
+      const isMajor = i % 5 === 0;
+      const rInner = isMajor ? rInnerMajor : rInnerMinor;
+      const x1 = cx + rOuter * Math.cos(angle);
+      const y1 = cy + rOuter * Math.sin(angle);
+      const x2 = cx + rInner * Math.cos(angle);
+      const y2 = cy + rInner * Math.sin(angle);
+      const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      line.setAttribute('x1', x1.toFixed(2));
+      line.setAttribute('y1', y1.toFixed(2));
+      line.setAttribute('x2', x2.toFixed(2));
+      line.setAttribute('y2', y2.toFixed(2));
+      if (isMajor) line.setAttribute('stroke-width', '2.5');
+      g.appendChild(line);
+    }
+  })();
+</script>
+<script src="js/format.js"></script>
+<script src="js/timer-engine.js"></script>
+<script src="js/sound-engine.js"></script>
+<script src="js/confetti.js"></script>
+<script src="js/ambient-field.js"></script>
+<script src="js/modes.js"></script>
+<script src="js/storage.js"></script>
+<script src="js/theme-manager.js"></script>
+<script src="js/voice-commander.js"></script>
+<script src="js/voice-announcer.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
